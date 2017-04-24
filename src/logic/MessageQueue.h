@@ -10,24 +10,21 @@
 namespace nsSmppClient {
   class MessageQueue {
   public:
-    MessageQueue(SmppClient& smppClient);
+    MessageQueue(SmppClient& smppClient);    
 
     void sending();
     void receiving();
 
-    void push(const std::string& message);
+    void push(const std::vector<char>& message);
     void pop();
-    std::string take();
+    std::vector<char> take();
     bool isEmpty() const;
-    size_t size() const;
+    size_t size() const;    
 
-    std::queue<std::string>& queue();
-
-    std::mutex mMutex;
   private:
     SmppClient& mSmppClient;
-    std::queue<std::string> mQueue;
-
+    std::queue<std::vector<char>> mQueue;
+    std::mutex mMutex;
   };
 }
 

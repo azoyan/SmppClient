@@ -11,7 +11,7 @@ nsSmppClient::MessageQueue::MessageQueue(SmppClient& smppClient)
 void nsSmppClient::MessageQueue::sending() {
   while(true) {
     while (!mQueue.empty()) {
-      std::string message = mQueue.front();
+      auto message = mQueue.front();
       mQueue.pop();
 
       mMutex.lock();
@@ -28,13 +28,12 @@ void nsSmppClient::MessageQueue::receiving() {
     mMutex.unlock();
     while(mSmppClient.hasResponses()) {
       auto msg = mSmppClient.takeMessage();
-//      std::cout << msg;
       mQueue.push(msg);
     }
   }
 }
 
-void nsSmppClient::MessageQueue::push(const std::string& message) {
+void nsSmppClient::MessageQueue::push(const std::vector<char>& message) {
   mQueue.push(message);
 }
 
@@ -42,10 +41,10 @@ void nsSmppClient::MessageQueue::pop() {
   mQueue.pop();
 }
 
-std::string nsSmppClient::MessageQueue::take() {
+std::vector<char> nsSmppClient::MessageQueue::take() {
   assert(!mQueue.empty());
 
-  std::string result(mQueue.front());
+  auto result(mQueue.front());
   mQueue.pop();
   return result;
 }
@@ -56,8 +55,4 @@ bool nsSmppClient::MessageQueue::isEmpty() const {
 
 size_t nsSmppClient::MessageQueue::size() const {
   return mQueue.size();
-}
-
-std::queue<std::string>& nsSmppClient::MessageQueue::queue() {
-  return mQueue;
 }

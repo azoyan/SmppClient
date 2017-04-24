@@ -8,10 +8,10 @@
 
 
 nsSmppClient::BindTransceiver::BindTransceiver()
-: mCommandLength(0)
-, mCommandId(CommandId::BindTransceiver)
-, mCommandStatus(1)
-, mSequenceNumber(1)
+: mCommandLength(DefaultLength)
+, mCommandId(CommandId::BindTransceiverId)
+, mCommandStatus(177)
+, mSequenceNumber(22)
 , mInterfaceVersion(0)
 , mAddrTon(0)
 , mAddrNpi(0)
@@ -20,43 +20,47 @@ nsSmppClient::BindTransceiver::BindTransceiver()
 
 }
 
-void nsSmppClient::BindTransceiver::setParameteres(const std::string& systemId,
-                                                   const std::string& password,
-                                                   const std::string& systemType,
-                                                   int8_t interfaceVersion,
-                                                   const std::string& addressRange) {
+void nsSmppClient::BindTransceiver::setSystemId(const std::string& systemId) {
+  mCommandLength += systemId.size();
+  mSystemID = systemId;
+}
 
-  mIsCorrect = systemId.size() <= SystemIdMaxLength;
-  mIsCorrect = mIsCorrect && password.size()     <= PasswordMaxLength;
-  mIsCorrect = mIsCorrect && systemType.size()   <= SystemTypeMaxLength;
-  mIsCorrect = mIsCorrect && addressRange.size() <= AddressRangeMaxLength;
+void nsSmppClient::BindTransceiver::setPassword(const std::string& password) {
+  mCommandLength += password.size();
+  mPassword = password;
+}
 
-  if (mIsCorrect) {
-    mCommandLength = sizeof(mCommandLength)
-                   + sizeof(mCommandId)
-                   + sizeof(mCommandStatus)
-                   + sizeof(mSequenceNumber)
-                   + systemId.size()
-                   + password.size()
-                   + systemType.size()
-                   + sizeof(mInterfaceVersion)
-                   + sizeof(mAddrTon)
-                   + sizeof(mAddrNpi)
-                   + addressRange.size();
+void nsSmppClient::BindTransceiver::setSystemType(const std::string& systemType) {
+  mCommandLength += systemType.size();
+  mSystemType = systemType;
+}
 
-    mSystemID         = systemId;
-    mPassowrd         = password;
-    mSystemType       = systemType;
-    mInterfaceVersion = interfaceVersion;
-    mAddressRange     = addressRange;
-  }
+void nsSmppClient::BindTransceiver::setInterfaceVersion(int8_t interfaceVersion) {
+  mInterfaceVersion = interfaceVersion;
+}
+
+void nsSmppClient::BindTransceiver::setAddrTon(int8_t addrTon) {
+  mAddrTon = addrTon;
+}
+
+void nsSmppClient::BindTransceiver::setAddrNpi(int8_t addrNpi){
+  mAddrNpi = addrNpi;
+}
+
+void nsSmppClient::BindTransceiver::setAddresRange(const std::__cxx11::string& addressRange) {
+  mCommandLength += addressRange.size();
+  mAddressRange = addressRange;
 }
 
 bool nsSmppClient::BindTransceiver::isCorrect() const {
-  return mIsCorrect;
+  bool ok  = mSystemID.size()     <= SystemIdMaxLength;
+  ok = ok && mPassword.size()     <= PasswordMaxLength;
+  ok = ok && mSystemType.size()   <= SystemTypeMaxLength;
+  ok = ok && mAddressRange.size() <= AddressRangeMaxLength;
+  return ok;
 }
 
-std::vector<char> nsSmppClient::BindTransceiver::byteArray() {
+std::vector<char> nsSmppClient::BindTransceiver::byteArray() const {
   char commandLength   [sizeof(mCommandLength)];
   char commandId       [sizeof(mCommandId)];
   char commandStatus   [sizeof(mCommandStatus)];
@@ -79,7 +83,7 @@ std::vector<char> nsSmppClient::BindTransceiver::byteArray() {
   strcat(bytes, commandStatus);
   strcat(bytes, sequenceNumber);
   strcat(bytes, mSystemID.c_str());
-  strcat(bytes, mPassowrd.c_str());
+  strcat(bytes, mPassword.c_str());
   strcat(bytes, mSystemType.c_str());
   strcat(bytes, interfaceVersion);
   strcat(bytes, addrTon);

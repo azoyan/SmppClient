@@ -11,9 +11,10 @@
 #include "../pdu/BindTransceiverResponse.h"
 
 nsSmppClient::SmppClient::SmppClient()
-  : mSendBufferSize(MaxBindTransceiverSize)
-  , mReceiveBufferSize(MaxBindTransceiverRespSize)
-  , mSocket(0) {
+: mSendBufferSize(BindTransceiver::MaxBindTransceiverSize)
+, mReceiveBufferSize(BindTransceiverResponse::MaxBindTransceiverRespSize)
+, mSocket(0)
+{
 
 }
 
@@ -29,7 +30,7 @@ bool nsSmppClient::SmppClient::connect(const std::string& ipAddress, const std::
 
   addrinfo* res;
   int status = ::getaddrinfo(ipAddress.data(), port.data(), &hints, &res);
-  mSocket = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+  mSocket    = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   bool ok = mSocket != -1;
   status = ::connect(mSocket, res->ai_addr, res->ai_addrlen);
   ok = ok && (status != -1);
@@ -47,10 +48,7 @@ void nsSmppClient::SmppClient::read() {
   receiveBuffer[numbytes] = '\0';
 
   if (numbytes != -1) {
-    BindTransceiverResponse bindTransceiverResp;
-    bindTransceiverResp.setData(receiveBuffer);
-
-    mReceivedMessage = "\nserver:" + std::string(receiveBuffer) + "\n";
+    std::copy(receiveBuffer, receiveBuffer + mReceiveBufferSize, std::back_inserter(mReceivedMessage));
   }
 }
 
@@ -58,13 +56,13 @@ bool nsSmppClient::SmppClient::hasResponses() {
   return !mReceivedMessage.empty();
 }
 
-std::string nsSmppClient::SmppClient::takeMessage() {
-  std::string s = mReceivedMessage;
+std::vector<char> nsSmppClient::SmppClient::takeMessage() {
+  std::vector<char> s = mReceivedMessage;
   mReceivedMessage.clear();
   return s;
 }
 
-void nsSmppClient::SmppClient::sendMessage(const std::string& message) {
+void nsSmppClient::SmppClient::sendMessage(const std::vector<char>& message) {
   ssize_t sended = send(mSocket, message.data(), message.size(), MSG_NOSIGNAL);
   if (sended < 0) std::cerr << "Couldn't send" << std::endl;
 }

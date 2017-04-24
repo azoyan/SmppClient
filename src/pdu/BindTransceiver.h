@@ -9,22 +9,29 @@
 
 namespace nsSmppClient {
   class BindTransceiver {
-  public:
-    BindTransceiver();
+    enum { DefaultLength = 19 }; //4 * int + 3  * char
 
     enum { SystemIdMaxLength     = 16,
            PasswordMaxLength     = 9,
            SystemTypeMaxLength   = 13,
            AddressRangeMaxLength = 41 };
 
-    void setParameteres(const std::string& systemId,
-                        const std::string& password,
-                        const std::string& systemType,
-                        int8_t interfaceVersion, const std::__cxx11::string& addressRange);
+    enum CommandId { BindTransceiverId = 0x00000009 };
+  public:
+    BindTransceiver();
 
+    enum { MaxBindTransceiverSize = 98 };
+
+    void setSystemId(const std::string& systemId);
+    void setPassword(const std::string& password);
+    void setSystemType(const std::string& systemType);
+    void setInterfaceVersion(int8_t interfaceVersion);
+    void setAddrTon(int8_t addrTon);
+    void setAddrNpi(int8_t addrNpi);
+    void setAddresRange(const std::string& addressRange);
+  public:
     bool isCorrect() const;
-
-    std::vector<char> byteArray();
+    std::vector<char> byteArray() const;
 
   private:
     //header
@@ -35,7 +42,7 @@ namespace nsSmppClient {
 
     //body
     std::string mSystemID;
-    std::string mPassowrd;
+    std::string mPassword;
     std::string mSystemType;
     char mInterfaceVersion;
     char mAddrTon;

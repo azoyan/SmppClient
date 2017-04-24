@@ -14,17 +14,14 @@ nsSmppClient::BindTransceiverResponse::BindTransceiverResponse()
 
 void nsSmppClient::BindTransceiverResponse::setData(const char* data) {
   mCommandLength  = dataToInt32(data);
-  if (mCommandLength < MaxBindTransceiverRespSize) {
+  if (mCommandLength < MaxBindTransceiverRespSize &&
+      mCommandLength > MinBindTransceiverRespSize) {
     mCommandId      = dataToInt32(data + sizeof(mCommandLength));
     mCommandStatus  = dataToInt32(data + sizeof(mCommandLength) + sizeof(mCommandId));
     mSequenceNumber = dataToInt32(data + sizeof(mCommandLength) + sizeof(mCommandId) + sizeof(mCommandStatus));
-    const char* begin = data
-                      + sizeof(mCommandLength)
-                      + sizeof(mCommandId)
-                      + sizeof(mCommandStatus)
-                      + sizeof(mSequenceNumber);
 
-    size_t size = mCommandLength - (16);
+    const char* begin = data + HeaderLength;
+    size_t size = mCommandLength - (HeaderLength);
 
     mSystemID.assign(begin, size);
 
@@ -38,5 +35,9 @@ void nsSmppClient::BindTransceiverResponse::clear() {
   mCommandStatus  = 0;
   mSequenceNumber = 0;
   mSystemID.clear();
+}
+
+int32_t nsSmppClient::BindTransceiverResponse::sequenceNumber() const {
+  return mSequenceNumber;
 }
 

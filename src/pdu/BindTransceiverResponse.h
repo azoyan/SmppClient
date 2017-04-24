@@ -6,16 +6,17 @@
 
 namespace nsSmppClient {
   class BindTransceiverResponse {
+    enum CommandId { BindTransceiverRespId = 0x80000009 };
+    enum { HeaderLength = 16, SystemIdMaxLength = 16 };
   public:
     BindTransceiverResponse();
-    enum { SystemIdMaxLength = 16 };
 
     void setData(const char* data);
-
-  public:
     void clear();
-  public:
     int32_t sequenceNumber() const;
+
+    enum { MinBindTransceiverRespSize = HeaderLength, MaxBindTransceiverRespSize = 32 };
+
   private:
     //header
     int32_t mCommandLength;
@@ -24,7 +25,6 @@ namespace nsSmppClient {
     int32_t mSequenceNumber;
     //body
     std::string mSystemID;
-
   };
 }
 

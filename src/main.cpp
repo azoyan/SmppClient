@@ -3,9 +3,9 @@
 
 #include "logic//SmppClient.h"
 #include "logic//MessageQueue.h"
-#include <unistd.h>
 #include <mutex>
 #include "pdu/BindTransceiver.h"
+#include "pdu/BindTransceiverResponse.h"
 
 int main(int argv, char* argc []) {
   std::string ipAddress;
@@ -29,23 +29,41 @@ int main(int argv, char* argc []) {
   if (isConnected) std::cout << "Connected" << std::endl;
   else             std::cerr << "Connection error!" << std::endl;
 
-  nsSmppClient::BindTransceiver bt;
-  bt.setParameteres("Test", "Test", "WWW", 34, "a");
 
+  //создаём поток для приёма сообщений
   std::thread receivingThread(&nsSmppClient::MessageQueue::receiving, &receivingMessageQueue);
+  //создаём поток для отправки сообщений
   std::thread sendingThread(&nsSmppClient::MessageQueue::sending, &sendingMessageQueue);
 
+  //отдельный поток на ввод, так как cin блокирует вывод
   std::thread inputThread([&sendingMessageQueue] {
     while(true) {
-      std::string message;
-      std::cin >> message;
-      sendingMessageQueue.push(message);
+      std::string systemId, password, systemType;
+      int version;
+      std::cout << "BIND_TRANSCEIVER format: [system ID] [password] [system type] [version]\n";
+      std::cin >> systemId;
+      std::cin >> password;
+      std::cin >> systemType;
+      std::cin >> version;
+      nsSmppClient::BindTransceiver pduBindTransceiver;
+      pduBindTransceiver.setSystemId(systemId);
+      pduBindTransceiver.setPassword(password);
+      pduBindTransceiver.setSystemType(systemType);
+      pduBindTransceiver.setInterfaceVersion(version);
+
+      sendingMessageQueue.push(pduBindTransceiver.byteArray());
+      std::cout << "\nsended message: " << pduBindTransceiver.byteArray().data() << std::endl;
     }
   } );
 
   while (true) {
     if (!receivingMessageQueue.isEmpty()) {
-      std::cout << receivingMessageQueue.take();
+      std::vector<char> receivedMessage = receivingMessageQueue.take();
+      std::cout << "Received message: " << receivedMessage.data() << " size: " << receivedMessage.size() << std::endl;
+      nsSmppClient::BindTransceiverResponse pduBindTransceiverResponse;
+      pduBindTransceiverResponse.setData(receivedMessage.data());
+      std::cout << "Sequence number: " << pduBindTransceiverResponse.sequenceNumber() << std::endl;
+
     }
   }
 

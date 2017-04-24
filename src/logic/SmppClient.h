@@ -18,14 +18,14 @@ namespace  nsSmppClient {
     void read();
     bool hasResponses();
 
-    std::string takeMessage();
-    void sendMessage(const std::string& message);
+    std::vector<char> takeMessage();
+    void sendMessage(const std::vector<char>& message);
 
 private:
     int mSendBufferSize;
     int mReceiveBufferSize;
     Socket mSocket;
-    std::string mReceivedMessage;
+    std::vector<char> mReceivedMessage;
 
     int setNonblocking(int fd);
 
