@@ -13,19 +13,26 @@ nsSmppClient::BindTransceiverResponse::BindTransceiverResponse()
 }
 
 void nsSmppClient::BindTransceiverResponse::setData(const char* data) {
+
+  std::cout << std::endl;
+  for (char i = 0; i < MaxBindTransceiverRespSize; ++i) {
+    std::cout << static_cast<int>(data[i]) << " ";
+  }
+  std::cout << std::endl;
+
+
   mCommandLength  = dataToInt32(data);
   if (mCommandLength < MaxBindTransceiverRespSize &&
       mCommandLength > MinBindTransceiverRespSize) {
+
     mCommandId      = dataToInt32(data + sizeof(mCommandLength));
     mCommandStatus  = dataToInt32(data + sizeof(mCommandLength) + sizeof(mCommandId));
     mSequenceNumber = dataToInt32(data + sizeof(mCommandLength) + sizeof(mCommandId) + sizeof(mCommandStatus));
 
-    const char* begin = data + HeaderLength;
-    size_t size = mCommandLength - (HeaderLength);
+    const char* systemIdBegin = data + HeaderLength;
+    size_t systemIdSize = mCommandLength - (HeaderLength);
 
-    mSystemID.assign(begin, size);
-
-    std::cout << mSystemID << std::endl;
+    mSystemID.assign(systemIdBegin, systemIdSize);
   }
 }
 
@@ -37,7 +44,23 @@ void nsSmppClient::BindTransceiverResponse::clear() {
   mSystemID.clear();
 }
 
+int32_t nsSmppClient::BindTransceiverResponse::commandLength() const {
+  return mCommandLength;
+}
+
+int32_t nsSmppClient::BindTransceiverResponse::commandId() const {
+  return mCommandId;
+}
+
 int32_t nsSmppClient::BindTransceiverResponse::sequenceNumber() const {
   return mSequenceNumber;
+}
+
+int32_t nsSmppClient::BindTransceiverResponse::commandStatus() const {
+  return mCommandStatus;
+}
+
+std::string nsSmppClient::BindTransceiverResponse::systemId() const {
+  return mSystemID;
 }
 

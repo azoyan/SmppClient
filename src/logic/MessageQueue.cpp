@@ -12,9 +12,8 @@ void nsSmppClient::MessageQueue::sending() {
   while(true) {
     while (!mQueue.empty()) {
       auto message = mQueue.front();
-      mQueue.pop();
-
       mMutex.lock();
+      mQueue.pop();
       mSmppClient.sendMessage(message);
       mMutex.unlock();
     }
@@ -25,11 +24,11 @@ void nsSmppClient::MessageQueue::receiving() {
   while (true) {
     mMutex.lock();
     mSmppClient.read();
-    mMutex.unlock();
     while(mSmppClient.hasResponses()) {
       auto msg = mSmppClient.takeMessage();
       mQueue.push(msg);
     }
+    mMutex.unlock();
   }
 }
 

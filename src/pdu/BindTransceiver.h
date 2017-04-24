@@ -22,6 +22,8 @@ namespace nsSmppClient {
 
     enum { MaxBindTransceiverSize = 98 };
 
+
+    void setSequenceNumber(int32_t sequenceNumber);
     void setSystemId(const std::string& systemId);
     void setPassword(const std::string& password);
     void setSystemType(const std::string& systemType);
@@ -29,6 +31,7 @@ namespace nsSmppClient {
     void setAddrTon(int8_t addrTon);
     void setAddrNpi(int8_t addrNpi);
     void setAddresRange(const std::string& addressRange);
+
   public:
     bool isCorrect() const;
     std::vector<char> byteArray() const;
@@ -48,6 +51,8 @@ namespace nsSmppClient {
     char mAddrTon;
     char mAddrNpi;
     std::string mAddressRange;
+
+    static std::vector<char> intToBytes(int32_t number);
 
   private:
     bool mIsCorrect;

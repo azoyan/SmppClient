@@ -13,7 +13,12 @@ namespace nsSmppClient {
 
     void setData(const char* data);
     void clear();
+    int32_t commandLength() const;
+    int32_t commandId() const;
     int32_t sequenceNumber() const;
+    int32_t commandStatus() const;
+
+    std::string systemId() const;
 
     enum { MinBindTransceiverRespSize = HeaderLength, MaxBindTransceiverRespSize = 32 };
 

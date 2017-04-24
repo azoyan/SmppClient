@@ -26,9 +26,6 @@ private:
     int mReceiveBufferSize;
     Socket mSocket;
     std::vector<char> mReceivedMessage;
-
-    int setNonblocking(int fd);
-
   };
 }
 #endif // SMPPCLIENT_H
