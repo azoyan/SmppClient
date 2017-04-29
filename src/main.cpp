@@ -1,11 +1,16 @@
 #include <iostream>
 #include <thread>
 
-#include "logic/SmppClient.h"
+#include "logic/TcpClient.h"
 #include "logic/MessageQueue.h"
 #include <mutex>
+#include <unistd.h>
 #include "pdu/BindTransceiver.h"
 #include "pdu/BindTransceiverResponse.h"
+
+#include "logic/TcpClient.h"
+#include <condition_variable>
+#include <functional>
 
 int main(int argv, char* argc []) {
   std::string ipAddress;
@@ -21,70 +26,66 @@ int main(int argv, char* argc []) {
     std::cin  >> port;
   }
 
-  nsSmppClient::SmppClient smppClient;
-  nsSmppClient::MessageQueue sendingMessageQueue(smppClient);
-  nsSmppClient::MessageQueue receivingMessageQueue(smppClient);
+  nsSmppClient::TcpClient smppClient;
 
   bool isConnected = smppClient.connect(ipAddress, port);
   if (isConnected) std::cout << "Connected" << std::endl;
   else {
-   std::cerr << "Connection error!" << std::endl;
-   return 0;
-   }
+    std::cerr << "Connection error!" << std::endl;
+    return 0;
+  }
+
+  std::cout << "BIND_TRANSCEIVER format: [system ID] [password] [system type] [version] [sequence number]\n\n";
+
+  nsSmppClient::MessageQueue sendingMessageQueue(smppClient);
+  // создаём поток для отправки сообщений
+  std::thread sendingThread(&nsSmppClient::MessageQueue::sending, std::ref(sendingMessageQueue));
 
 
-  //создаём поток для приёма сообщений
-  std::thread receivingThread(&nsSmppClient::MessageQueue::receiving, &receivingMessageQueue);
-  //создаём поток для отправки сообщений
-  std::thread sendingThread(&nsSmppClient::MessageQueue::sending, &sendingMessageQueue);
-
-  //отдельный поток на ввод, так как cin блокирует вывод
-  std::thread inputThread([&sendingMessageQueue] {
-    std::mutex mutex;
-    while(true) {
-      std::string systemId, password, systemType;
-      int version, sequenceNumber;
-      mutex.lock();
-      std::cout << "BIND_TRANSCEIVER format: [system ID] [password] [system type] [version] [sequence number]\n";
-      std::cin >> systemId;
-      std::cin >> password;
-      std::cin >> systemType;
-      std::cin >> version;
-      std::cin >> sequenceNumber;
-      nsSmppClient::BindTransceiver pduBindTransceiver;
-      pduBindTransceiver.setSystemId(systemId);
-      pduBindTransceiver.setPassword(password);
-      pduBindTransceiver.setSystemType(systemType);
-      pduBindTransceiver.setInterfaceVersion(version);
-      pduBindTransceiver.setSequenceNumber(sequenceNumber);
-
-
-      std::cout << "\nsended message: \n";
-      std::vector<char> v = pduBindTransceiver.byteArray();
-      sendingMessageQueue.push(pduBindTransceiver.byteArray());
-      mutex.unlock();
-
-    }
-  } );
+  nsSmppClient::MessageQueue receivingMessageQueue(smppClient);
+  // создаём поток для приёма сообщений
+  std::thread receivingThread(&nsSmppClient::MessageQueue::receiving, std::ref(receivingMessageQueue));
 
   while (true) {
     if (!receivingMessageQueue.isEmpty()) {
-      std::vector<char> receivedMessage = receivingMessageQueue.take();
-//      std::cout << "Received message: " << receivedMessage.data() << " size: " << receivedMessage.size() << std::endl;
       nsSmppClient::BindTransceiverResponse pduBindTransceiverResponse;
-      pduBindTransceiverResponse.setData(receivedMessage.data());
-      std::cout
-      << "Command Length: "  << pduBindTransceiverResponse.commandLength() << std::endl
-      << "Command ID: "      << pduBindTransceiverResponse.commandId() << std::endl
-      << "Command Status: "  << pduBindTransceiverResponse.commandStatus() << std::endl
-      << "Sequence number: " << pduBindTransceiverResponse.sequenceNumber() << std::endl
-      << "System ID: "       << pduBindTransceiverResponse.systemId() << std::endl
-      << std::endl;
-    }
-  }
+      pduBindTransceiverResponse.setData(receivingMessageQueue.take());
+      uint32_t commandLength    = pduBindTransceiverResponse.commandLength();
+      uint32_t commandId        = pduBindTransceiverResponse.commandId();
+      uint32_t commandStatus    = pduBindTransceiverResponse.commandStatus();
+      uint32_t sequenceNumber   = pduBindTransceiverResponse.sequenceNumber();
 
-  sendingThread.join();
+      std::string systemId      = pduBindTransceiverResponse.systemId();
+      std::string commandIdName = CommandId.at(commandId);
+
+      std::cout << std::endl
+                << "Command Length: "  << commandLength << std::endl
+                << "commandIdName: "   << commandIdName << std::endl
+                << "Command Status: "  << ErrorCodes.at(commandStatus) << std::endl
+                << "Sequence number: " << sequenceNumber << std::endl
+                << "System ID: "       << systemId << std::endl
+                << std::endl;
+
+    }
+    if (sendingMessageQueue.isEmpty()) {
+      std::string systemId1, password, systemType;
+      int sequenceNumber1;
+      std::cin >> systemId1;
+      std::cin >> password;
+      std::cin >> systemType;
+      std::cin >> sequenceNumber1;
+      nsSmppClient::BindTransceiver pduBindTransceiver;
+      pduBindTransceiver.setSystemId(systemId1);
+      pduBindTransceiver.setPassword(password);
+      pduBindTransceiver.setSystemType(systemType);
+      pduBindTransceiver.setSequenceNumber(sequenceNumber1);
+      sendingMessageQueue.push(pduBindTransceiver.byteArray());
+      sleep(2);
+      sendingMessageQueue.notify();
+
+    }
+ }
   receivingThread.join();
-  inputThread.join();
+  sendingThread.join();
   return 0;
 }

@@ -1,16 +1,18 @@
 #ifndef MESSAGEQUEUE_H
 #define MESSAGEQUEUE_H
 
-#include "SmppClient.h"
+#include "TcpClient.h"
 #include <queue>
 
 #include <mutex>
+#include <condition_variable>
 #include <string>
+#include <functional>
 
 namespace nsSmppClient {
   class MessageQueue {
   public:
-    MessageQueue(SmppClient& smppClient);    
+    MessageQueue(TcpClient& smppClient);
 
     void sending();
     void receiving();
@@ -20,11 +22,16 @@ namespace nsSmppClient {
     std::vector<char> take();
     bool isEmpty() const;
     size_t size() const;    
+    void notify();
+
 
   private:
-    SmppClient& mSmppClient;
+    TcpClient& mTcpClient;
+    std::function<void()> callFunction;
+
     std::queue<std::vector<char>> mQueue;
     std::mutex mMutex;
+    std::condition_variable mCondition;
   };
 }
 

@@ -12,18 +12,26 @@ nsSmppClient::BindTransceiverResponse::BindTransceiverResponse()
 
 }
 
+void nsSmppClient::BindTransceiverResponse::setCommandLength(uint32_t commandLength) {
+  mCommandLength = commandLength;
+}
+
+void nsSmppClient::BindTransceiverResponse::setCommandId(uint32_t commandId) {
+  mCommandId = commandId;
+}
+
+void nsSmppClient::BindTransceiverResponse::setSequenceNumber(uint32_t sequenceNumber) {
+  mSequenceNumber = sequenceNumber;
+}
+
+void nsSmppClient::BindTransceiverResponse::setCommandStatus(uint32_t commandStatus){
+  mCommandStatus = commandStatus;
+}
+
 void nsSmppClient::BindTransceiverResponse::setData(const char* data) {
-
-  std::cout << std::endl;
-  for (char i = 0; i < MaxBindTransceiverRespSize; ++i) {
-    std::cout << static_cast<int>(data[i]) << " ";
-  }
-  std::cout << std::endl;
-
-
   mCommandLength  = dataToInt32(data);
-  if (mCommandLength < MaxBindTransceiverRespSize &&
-      mCommandLength > MinBindTransceiverRespSize) {
+  if (mCommandLength > MinBindTransceiverRespSize &&
+      mCommandLength < MaxBindTransceiverRespSize) {
 
     mCommandId      = dataToInt32(data + sizeof(mCommandLength));
     mCommandStatus  = dataToInt32(data + sizeof(mCommandLength) + sizeof(mCommandId));
@@ -36,6 +44,10 @@ void nsSmppClient::BindTransceiverResponse::setData(const char* data) {
   }
 }
 
+void nsSmppClient::BindTransceiverResponse::setData(std::vector<char> data) {
+  setData(data.data());
+}
+
 void nsSmppClient::BindTransceiverResponse::clear() {
   mCommandLength  = 0;
   mCommandId      = 0;
@@ -44,23 +56,28 @@ void nsSmppClient::BindTransceiverResponse::clear() {
   mSystemID.clear();
 }
 
-int32_t nsSmppClient::BindTransceiverResponse::commandLength() const {
+uint32_t nsSmppClient::BindTransceiverResponse::commandLength() const {
   return mCommandLength;
 }
 
-int32_t nsSmppClient::BindTransceiverResponse::commandId() const {
+uint32_t nsSmppClient::BindTransceiverResponse::commandId() const {
   return mCommandId;
 }
 
-int32_t nsSmppClient::BindTransceiverResponse::sequenceNumber() const {
+uint32_t nsSmppClient::BindTransceiverResponse::sequenceNumber() const {
   return mSequenceNumber;
 }
 
-int32_t nsSmppClient::BindTransceiverResponse::commandStatus() const {
+uint32_t nsSmppClient::BindTransceiverResponse::commandStatus() const {
   return mCommandStatus;
 }
 
 std::string nsSmppClient::BindTransceiverResponse::systemId() const {
   return mSystemID;
+}
+
+uint32_t nsSmppClient::BindTransceiverResponse::dataToInt32(const char* data) {
+  return data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3];
+
 }
 

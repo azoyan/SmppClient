@@ -1,16 +1,16 @@
-#ifndef SMPPCLIENT_H
-#define SMPPCLIENT_H
+#ifndef TCPCLIENT_H
+#define TCPCLIENT_H
 
 #include <string>
 #include <queue>
 
 namespace  nsSmppClient {
-  class SmppClient {
+  class TcpClient {
     using Socket = int;
 
   public:
-    SmppClient();
-    ~SmppClient();
+    TcpClient();
+    ~TcpClient();
 
     bool connect(const std::string& ipAddress, const std::string& port);
     void setReceiveBufferSize(size_t bufferSize);
@@ -20,6 +20,7 @@ namespace  nsSmppClient {
 
     std::vector<char> takeMessage();
     void sendMessage(const std::vector<char>& message);
+    void sendMessage(const char* data);
 
 private:
     int mSendBufferSize;
@@ -28,4 +29,4 @@ private:
     std::vector<char> mReceivedMessage;
   };
 }
-#endif // SMPPCLIENT_H
+#endif // TCPCLIENT_H

@@ -16,9 +16,10 @@ pdu/BindTransceiverResponse.cpp
 pdu/BindTransceiverResponse.h
 logic/MessageQueue.cpp
 logic/MessageQueue.h
-logic/SmppClient.cpp
-logic/SmppClient.h
+logic/TcpClient.cpp
+logic/TcpClient.h
 Global.h
+Global.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} pthread)

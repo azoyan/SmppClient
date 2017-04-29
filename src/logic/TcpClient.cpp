@@ -1,4 +1,4 @@
-#include "SmppClient.h"
+#include "TcpClient.h"
 
 #include <netdb.h>
 #include <sys/ioctl.h>
@@ -10,19 +10,20 @@
 #include "../pdu/BindTransceiver.h"
 #include "../pdu/BindTransceiverResponse.h"
 
-nsSmppClient::SmppClient::SmppClient()
-: mSendBufferSize(BindTransceiver::MaxBindTransceiverSize)
-, mReceiveBufferSize(BindTransceiverResponse::MaxBindTransceiverRespSize)
+nsSmppClient::TcpClient::TcpClient()
+: mSendBufferSize(34)
+, mReceiveBufferSize(21)
 , mSocket(0)
 {
 
 }
 
-nsSmppClient::SmppClient::~SmppClient() {
+nsSmppClient::TcpClient::~TcpClient() {
+  ::shutdown(mSocket, SHUT_RDWR);
   ::close(mSocket);
 }
 
-bool nsSmppClient::SmppClient::connect(const std::string& ipAddress, const std::string& port) {
+bool nsSmppClient::TcpClient::connect(const std::string& ipAddress, const std::string& port) {
   addrinfo hints{};
   hints.ai_family   = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
@@ -34,15 +35,15 @@ bool nsSmppClient::SmppClient::connect(const std::string& ipAddress, const std::
   bool ok = mSocket != -1;
   status = ::connect(mSocket, res->ai_addr, res->ai_addrlen);
   ok = ok && (status != -1);
-  freeaddrinfo(res);
+  if(ok) freeaddrinfo(res);
   return ok;
 }
 
-void nsSmppClient::SmppClient::setReceiveBufferSize(size_t receiveBufferSize) {
+void nsSmppClient::TcpClient::setReceiveBufferSize(size_t receiveBufferSize) {
   mReceiveBufferSize = receiveBufferSize;
 }
 
-void nsSmppClient::SmppClient::read() {
+void nsSmppClient::TcpClient::read() {
   char receiveBuffer[mReceiveBufferSize];
   int numbytes = recv(mSocket, receiveBuffer, mReceiveBufferSize, MSG_NOSIGNAL );
   receiveBuffer[numbytes] = '\0';
@@ -52,17 +53,25 @@ void nsSmppClient::SmppClient::read() {
   }
 }
 
-bool nsSmppClient::SmppClient::hasResponses() {
+bool nsSmppClient::TcpClient::hasResponses() {
   return !mReceivedMessage.empty();
 }
 
-std::vector<char> nsSmppClient::SmppClient::takeMessage() {
+std::vector<char> nsSmppClient::TcpClient::takeMessage() {
   std::vector<char> s = mReceivedMessage;
   mReceivedMessage.clear();
   return s;
 }
 
-void nsSmppClient::SmppClient::sendMessage(const std::vector<char>& message) {
-  ssize_t sended = send(mSocket, message.data(), message.size(), MSG_NOSIGNAL);
+void nsSmppClient::TcpClient::sendMessage(const std::vector<char>& message) {
+  std::cout << std::endl;
+  ssize_t sended = send(mSocket, message.data(), message.size(), 0);
+
+  if (sended < 0) std::cerr << "Couldn't send" << std::endl;
+}
+
+void nsSmppClient::TcpClient::sendMessage(const char* data) {
+  ssize_t sended = send(mSocket, data, 4, MSG_NOSIGNAL);
+
   if (sended < 0) std::cerr << "Couldn't send" << std::endl;
 }

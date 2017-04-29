@@ -1,28 +1,24 @@
 #include "BindTransceiver.h"
-#include <algorithm>
 #include <sstream>
 
 #include <cstring>
 #include <iostream>
 #include "../Global.h"
 
-#include <algorithm>
-
-
 nsSmppClient::BindTransceiver::BindTransceiver()
-  : mCommandId(CommandId::BindTransceiverId)
-  , mCommandStatus(0)
-  , mSequenceNumber(42)
-  , mInterfaceVersion(5)
-  , mAddrTon(0)
-  , mAddrNpi(0)
-  , mAddressRange()
-  , mIsCorrect(false)
+: mCommandId(Command::ID::BindTransceiver)
+, mCommandStatus(0)
+, mSequenceNumber(1)
+, mInterfaceVersion(0x34)
+, mAddrTon(0)
+, mAddrNpi(0)
+, mAddressRange()
+, mIsCorrect(false)
 {
 
 }
 
-void nsSmppClient::BindTransceiver::setSequenceNumber(int32_t sequenceNumber) {
+void nsSmppClient::BindTransceiver::setSequenceNumber(uint32_t sequenceNumber) {
   mSequenceNumber = sequenceNumber;
 }
 
@@ -31,7 +27,6 @@ void nsSmppClient::BindTransceiver::setSystemId(const std::string& systemId) {
 }
 
 void nsSmppClient::BindTransceiver::setPassword(const std::string& password) {
-
   mPassword = password;
 }
 
@@ -39,7 +34,7 @@ void nsSmppClient::BindTransceiver::setSystemType(const std::string& systemType)
   mSystemType = systemType;
 }
 
-void nsSmppClient::BindTransceiver::setInterfaceVersion(int8_t interfaceVersion) {
+void nsSmppClient::BindTransceiver::setInterfaceVersion(uint8_t interfaceVersion) {
   mInterfaceVersion = interfaceVersion;
 }
 
@@ -64,7 +59,7 @@ bool nsSmppClient::BindTransceiver::isCorrect() const {
 }
 
 std::vector<char> nsSmppClient::BindTransceiver::byteArray() const {
-  int32_t length = DefaultLength
+  uint32_t length = DefaultLength
                    + mSystemID.size() + 1
                    + mPassword.size() + 1
                    + mSystemType.size() + 1
@@ -91,23 +86,20 @@ std::vector<char> nsSmppClient::BindTransceiver::byteArray() const {
   result.push_back('\0');
 
   result.push_back(mInterfaceVersion);
+  std::cout << "Interface Version: " << static_cast<int>(mInterfaceVersion) << std::endl;
+
   result.push_back(mAddrTon);
   result.push_back(mAddrNpi);
 
   result.insert(result.end(), mAddressRange.begin(), mAddressRange.end());
   result.push_back('\0');
-
-//  std::cout << std::endl;
-
-//    std::cout << result.size() << " : size, capacity: " << result.capacity() << std::endl;
-
   return result;
 }
 
-std::vector<char> nsSmppClient::BindTransceiver::intToBytes(int32_t number) {
+std::vector<char> nsSmppClient::BindTransceiver::intToBytes(uint32_t number) {
   std::vector<char> result(sizeof(number));
   for (int i = 0; i < sizeof(number); i++) {
-    result.at(3 - i) = number >> (i * 8);
+    result.at(3 - i) = number >> (i * 8) & 0xFF;
   }
   return result;
 }
