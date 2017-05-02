@@ -11,8 +11,8 @@
 #include "../pdu/BindTransceiverResponse.h"
 
 nsSmppClient::TcpClient::TcpClient()
-: mSendBufferSize(34)
-, mReceiveBufferSize(21)
+: mSendBufferSize(0)
+, mReceiveBufferSize(0)
 , mSocket(0)
 {
 
@@ -35,12 +35,16 @@ bool nsSmppClient::TcpClient::connect(const std::string& ipAddress, const std::s
   bool ok = mSocket != -1;
   status = ::connect(mSocket, res->ai_addr, res->ai_addrlen);
   ok = ok && (status != -1);
-  if(ok) freeaddrinfo(res);
+  if (ok) freeaddrinfo(res);
   return ok;
 }
 
 void nsSmppClient::TcpClient::setReceiveBufferSize(size_t receiveBufferSize) {
   mReceiveBufferSize = receiveBufferSize;
+}
+
+void nsSmppClient::TcpClient::setSendBufferSize(size_t sendBufferSize) {
+  mSendBufferSize = sendBufferSize;
 }
 
 void nsSmppClient::TcpClient::read() {
@@ -64,14 +68,10 @@ std::vector<char> nsSmppClient::TcpClient::takeMessage() {
 }
 
 void nsSmppClient::TcpClient::sendMessage(const std::vector<char>& message) {
-  std::cout << std::endl;
-  ssize_t sended = send(mSocket, message.data(), message.size(), 0);
-
-  if (sended < 0) std::cerr << "Couldn't send" << std::endl;
+  sendMessage(message.data(), message.size());
 }
 
-void nsSmppClient::TcpClient::sendMessage(const char* data) {
-  ssize_t sended = send(mSocket, data, 4, MSG_NOSIGNAL);
-
+void nsSmppClient::TcpClient::sendMessage(const char* data, size_t size) {
+  ssize_t sended = send(mSocket, data, size, MSG_NOSIGNAL);
   if (sended < 0) std::cerr << "Couldn't send" << std::endl;
 }

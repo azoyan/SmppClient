@@ -45,7 +45,7 @@ namespace nsSmppClient {
     enum { SystemIdMaxLength = 16 };
   public:
     enum { MinBindTransceiverRespSize = HeaderLength,
-           MaxBindTransceiverRespSize = MinBindTransceiverRespSize + HeaderLength };
+           MaxBindTransceiverRespSize = MinBindTransceiverRespSize + SystemIdMaxLength };
   };
 }
 
