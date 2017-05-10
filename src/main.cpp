@@ -12,16 +12,16 @@
 
 nsSmppClient::BindTransceiver createBindTransceiver() {
   std::string systemId, password, systemType;
-      int sequenceNumber;
-      std::cin >> systemId;
-      std::cin >> password;
-      std::cin >> systemType;
-      std::cin >> sequenceNumber;
-      nsSmppClient::BindTransceiver  pdu;
-      pdu.setSystemId(systemId);
-      pdu.setPassword(password);
-      pdu.setSystemType(systemType);
-      pdu.setSequenceNumber(sequenceNumber);
+  int sequenceNumber;
+  std::cin >> systemId;
+  std::cin >> password;
+  std::cin >> systemType;
+  std::cin >> sequenceNumber;
+  nsSmppClient::BindTransceiver  pdu;
+  pdu.setSystemId(systemId);
+  pdu.setPassword(password);
+  pdu.setSystemType(systemType);
+  pdu.setSequenceNumber(sequenceNumber);
   return pdu;
 }
 
@@ -80,17 +80,17 @@ int main(int argv, char* argc []) {
   std::thread sendingThread([&tcpClient, &sendingQueue, &sendCondition] {
     std::mutex mutex;
     while(true) {
-    std::unique_lock<std::mutex> lock(mutex);
-    sendCondition.wait(lock, [&sendingQueue] { return !sendingQueue.empty(); } );
-    std::cout << "in sending  " << std::this_thread::get_id() << std::endl;
-    while (!sendingQueue.empty()) {
-      auto message = sendingQueue.front();
-      sendingQueue.pop();
-      tcpClient.sendMessage(message);
+      std::unique_lock<std::mutex> lock(mutex);
+      sendCondition.wait(lock, [&sendingQueue] { return !sendingQueue.empty(); } );
+      std::cout << "in sending  " << std::this_thread::get_id() << std::endl;
+      while (!sendingQueue.empty()) {
+        auto message = sendingQueue.front();
+        sendingQueue.pop();
+        tcpClient.sendMessage(message);
+      }
+      std::cout << "sending end\n";
+      mutex.unlock();
     }
-    std::cout << "sending end\n";
-    mutex.unlock();
-  }
   });
 
   std::queue<std::vector<char>> receivingQueue;
@@ -101,9 +101,8 @@ int main(int argv, char* argc []) {
   std::thread receivingThread( [&tcpClient, &receivingQueue, &receiveCondition] {
     std::mutex mutex;
     while (true) {
-     std::unique_lock<std::mutex> lock(mutex);
+      std::unique_lock<std::mutex> lock(mutex);
       std::cout << "in read  " << std::this_thread::get_id() << std::endl;
-
       tcpClient.read();
 
       while(tcpClient.hasResponses()) {
@@ -112,24 +111,30 @@ int main(int argv, char* argc []) {
       }
       receiveCondition.wait(lock, [&receivingQueue] { return !receivingQueue.empty(); } );
       mutex.unlock();
-    std::cout << "read done\n"  ;
-  }
+      std::cout << "read done\n"  ;
+    }
   });
 
-  while (true) {
+  bool needWork = true;
+
+  while (needWork) {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1s);
     while (!receivingQueue.empty()) {
       nsSmppClient::BindTransceiverResponse pduBindTransceiverResponse;
       pduBindTransceiverResponse.setData(receivingQueue.front());
-      print(pduBindTransceiverResponse);
       receivingQueue.pop();
+      print(pduBindTransceiverResponse);
+      bool ok = pduBindTransceiverResponse.commandStatus() == CommandStatus::ESME_ROK;
+      if (ok) {
+        std::cout << "Connection was successful" << std::endl;
+      }
     }
     if (sendingQueue.empty()) {
       auto pdu = createBindTransceiver().byteArray();
       sendingQueue.push(pdu);
-      receiveCondition.notify_all();
     }
+    receiveCondition.notify_all();
     sendCondition.notify_all();
   }
 
