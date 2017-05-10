@@ -5,13 +5,11 @@
 #include <string>
 #include <map>
 
-extern std::map<uint32_t, std::string> ErrorCodes;
-extern std::map<uint32_t, std::string> CommandId;
-namespace nsSmppClient {
+std::string errorCodeToString(int commandStatus);
+std::string commandIdToString(int commandId);
 
-
-  namespace Command {
-    enum ID { GenerickNack        = 0x80000000 ,
+    enum CommandId {
+              GenerickNack        = 0x80000000 ,
               BindReceiver        = 0x00000001 ,
               BindReceiverResp    = 0x80000001 ,
               BindTransmitter     = 0x00000002 ,
@@ -38,7 +36,5 @@ namespace nsSmppClient {
               AlertNotification   = 0x80000102 ,
               DataSm              = 0x00000103 ,
               DataSmResp          = 0x80000103 };
-  }
-}
 
 #endif // GLOBAL_H

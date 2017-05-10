@@ -1,7 +1,46 @@
-#include "Global.h"
+#include "ParameterDefinition.h"
 
-  std::map<uint32_t, std::string> ErrorCodes =
-  { { 0x00000000, "ESME_ROK"              },
+
+
+std::string commandIdToString(int commandId) {
+  static std::map<uint32_t, std::string> map =
+  {
+    { GenerickNack        ,   "GenerickNack"        },
+    { BindReceiver        ,   "BindReceiver"        },
+    { BindReceiverResp    ,   "BindReceiverResp"    },
+    { BindTransmitter     ,   "BindTransmitter"     },
+    { BindTransmitterResp ,   "BindTransmitterResp" },
+    { QuerySm             ,   "QuerySm"             },
+    { QuerySmResp         ,   "QuerySmResp"         },
+    { SubmitSm            ,   "SubmitSm"            },
+    { SubmitSmResp        ,   "SubmitSmResp"        },
+    { DeliverSm           ,   "DeliverSm"           },
+    { DeliverSmResp       ,   "DeliverSmResp"       },
+    { Unbind              ,   "Unbind"              },
+    { UnbindResp          ,   "UnbindResp"          },
+    { ReplaceSm           ,   "ReplaceSm"           },
+    { ReplaceSmResp       ,   "ReplaceSmResp"       },
+    { CancelSm            ,   "CancelSm"            },
+    { CancelSmResp        ,   "CancelSmResp"        },
+    { BindTransceiver     ,   "BindTransceiver"     },
+    { BindTransceiverResp ,   "BindTransceiverResp" },
+    { Outbind             ,   "Outbind"             },
+    { EnquireLink         ,   "EnquireLink"         },
+    { EnquireLinkResp     ,   "EnquireLinkResp"     },
+    { SubmitMulti         ,   "SubmitMulti"         },
+    { SubmitMultiResp     ,   "SubmitMultiResp"     },
+    { AlertNotification   ,   "AlertNotification"   },
+    { DataSm              ,   "DataSm"              },
+    { DataSmResp          ,   "DataSmResp"          }
+  };
+
+  return map[commandId];
+}
+
+std::string errorCodeToString(int commandStatus) {
+  static std::map<uint32_t, std::string> map =
+  {
+    { 0x00000000, "ESME_ROK"              },
     { 0x00000001, "ESME_RINVMSGLEN"       },
     { 0x00000002, "ESME_RINVCMDLEN"       },
     { 0x00000003, "ESME_RINVCMDID"        },
@@ -51,33 +90,5 @@
     { 0x000000FF, "ESME_RUNKNOWNERR"      },
   };
 
-  std::map<uint32_t, std::string> CommandId =
-  {
-               { 0x80000000 ,   "GenerickNack"        },
-               { 0x00000001 ,   "BindReceiver"        },
-               { 0x80000001 ,   "BindReceiverResp"    },
-               { 0x00000002 ,   "BindTransmitter"     },
-               { 0x80000002 ,   "BindTransmitterResp" },
-               { 0x00000003 ,   "QuerySm"             },
-               { 0x80000003 ,   "QuerySmResp"         },
-               { 0x00000004 ,   "SubmitSm"            },
-               { 0x80000004 ,   "SubmitSmResp"        },
-               { 0x00000005 ,   "DeliverSm"           },
-               { 0x80000005 ,   "DeliverSmResp"       },
-               { 0x00000006 ,   "Unbind"              },
-               { 0x80000006 ,   "UnbindResp"          },
-               { 0x00000007 ,   "ReplaceSm"           },
-               { 0x80000007 ,   "ReplaceSmResp"       },
-               { 0x00000008 ,   "CancelSm"            },
-               { 0x80000008 ,   "CancelSmResp"        },
-               { 0x00000009 ,   "BindTransceiver"     },
-               { 0x80000009 ,   "BindTransceiverResp" },
-               { 0x0000000B ,   "Outbind"             },
-               { 0x00000015 ,   "EnquireLink"         },
-               { 0x80000015 ,   "EnquireLinkResp"     },
-               { 0x00000021 ,   "SubmitMulti"         },
-               { 0x80000021 ,   "SubmitMultiResp"     },
-               { 0x80000102 ,   "AlertNotification"   },
-               { 0x00000103 ,   "DataSm"              },
-               { 0x80000103 ,   "DataSmResp"          }
-  };
+  return map[commandStatus];
+}

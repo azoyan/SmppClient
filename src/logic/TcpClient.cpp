@@ -6,10 +6,6 @@
 #include <iostream>
 #include <unistd.h>
 
-#include <string>
-#include "../pdu/BindTransceiver.h"
-#include "../pdu/BindTransceiverResponse.h"
-
 nsSmppClient::TcpClient::TcpClient()
 : mSendBufferSize(0)
 , mReceiveBufferSize(0)
@@ -24,7 +20,7 @@ nsSmppClient::TcpClient::~TcpClient() {
 }
 
 bool nsSmppClient::TcpClient::connect(const std::string& ipAddress, const std::string& port) {
-  addrinfo hints{};
+  addrinfo hints;
   hints.ai_family   = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags    = AI_PASSIVE;
@@ -32,10 +28,10 @@ bool nsSmppClient::TcpClient::connect(const std::string& ipAddress, const std::s
   addrinfo* res;
   int status = ::getaddrinfo(ipAddress.data(), port.data(), &hints, &res);
   mSocket    = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-  bool ok = mSocket != -1;
-  status = ::connect(mSocket, res->ai_addr, res->ai_addrlen);
-  ok = ok && (status != -1);
-  if (ok) freeaddrinfo(res);
+  bool ok    = mSocket != -1;
+  status     = ::connect(mSocket, res->ai_addr, res->ai_addrlen);
+  ok         = ok && (status != -1);
+  if (ok) ::freeaddrinfo(res);
   return ok;
 }
 
@@ -49,7 +45,7 @@ void nsSmppClient::TcpClient::setSendBufferSize(size_t sendBufferSize) {
 
 void nsSmppClient::TcpClient::read() {
   char receiveBuffer[mReceiveBufferSize];
-  int numbytes = recv(mSocket, receiveBuffer, mReceiveBufferSize, MSG_NOSIGNAL  );
+  int numbytes = ::recv(mSocket, receiveBuffer, mReceiveBufferSize, MSG_NOSIGNAL);
   receiveBuffer[numbytes] = '\0';
 
   if (numbytes != -1) {
@@ -72,6 +68,6 @@ void nsSmppClient::TcpClient::sendMessage(const std::vector<char>& message) {
 }
 
 void nsSmppClient::TcpClient::sendMessage(const char* data, size_t size) {
-  ssize_t sended = send(mSocket, data, size, MSG_NOSIGNAL);
+  ssize_t sended = ::send(mSocket, data, size, MSG_NOSIGNAL);
   if (sended < 0) std::cerr << "Couldn't send" << std::endl;
 }

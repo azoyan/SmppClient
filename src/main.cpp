@@ -1,16 +1,14 @@
 #include <iostream>
 #include <thread>
-
-#include "logic/TcpClient.h"
 #include <mutex>
 #include <unistd.h>
-#include "pdu/BindTransceiver.h"
-#include "pdu/BindTransceiverResponse.h"
-
-#include "logic/TcpClient.h"
 #include <condition_variable>
 #include <functional>
 #include <chrono>
+
+#include "pdu/BindTransceiver.h"
+#include "pdu/BindTransceiverResponse.h"
+#include "logic/TcpClient.h"
 
 nsSmppClient::BindTransceiver createBindTransceiver() {
   std::string systemId, password, systemType;
@@ -27,7 +25,7 @@ nsSmppClient::BindTransceiver createBindTransceiver() {
   return pdu;
 }
 
-void print(nsSmppClient::BindTransceiverResponse pduBindTransceiverResponse) {
+void print(const nsSmppClient::BindTransceiverResponse& pduBindTransceiverResponse) {
   uint32_t commandLength    = pduBindTransceiverResponse.commandLength();
   uint32_t commandId        = pduBindTransceiverResponse.commandId();
   uint32_t commandStatus    = pduBindTransceiverResponse.commandStatus();
@@ -35,9 +33,9 @@ void print(nsSmppClient::BindTransceiverResponse pduBindTransceiverResponse) {
 
   std::string systemId      = pduBindTransceiverResponse.systemId();
 
-  std::string commandIdName = CommandId.find(commandId) != CommandId.end() ? CommandId.at(commandId) : "";
+  std::string commandIdName = commandIdToString(commandId);
 
-  std::string commandStatusName = ErrorCodes.find(commandStatus) != ErrorCodes.end() ? ErrorCodes.at(commandStatus) : "";
+  std::string commandStatusName = errorCodeToString(commandStatus);
 
   std::cout << std::endl
             << "Command Length: "  << commandLength     << std::endl
@@ -73,7 +71,7 @@ int main(int argv, char* argc []) {
     return 0;
   }
 
-  std::cout << "BIND_TRANSCEIVER format: [system ID] [password] [system type] [version] [sequence number]\n\n";
+  std::cout << "BIND_TRANSCEIVER format: [system ID] [password] [system type] [sequence number]\n\n";
 
   std::queue<std::vector<char>> sendingQueue;
   std::condition_variable sendCondition;
@@ -116,7 +114,6 @@ int main(int argv, char* argc []) {
       mutex.unlock();
     std::cout << "read done\n"  ;
   }
-
   });
 
   while (true) {
@@ -128,9 +125,8 @@ int main(int argv, char* argc []) {
       print(pduBindTransceiverResponse);
       receivingQueue.pop();
     }
-
     if (sendingQueue.empty()) {
-    auto pdu = createBindTransceiver().byteArray();
+      auto pdu = createBindTransceiver().byteArray();
       sendingQueue.push(pdu);
       receiveCondition.notify_all();
     }

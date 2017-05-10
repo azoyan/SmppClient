@@ -3,10 +3,10 @@
 
 #include <cstring>
 #include <iostream>
-#include "../Global.h"
+#include "ParameterDefinition.h"
 
 nsSmppClient::BindTransceiver::BindTransceiver()
-: mCommandId(Command::ID::BindTransceiver)
+: mCommandId(CommandId::BindTransceiver)
 , mCommandStatus(0)
 , mSequenceNumber(0)
 , mInterfaceVersion(0x34)

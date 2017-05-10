@@ -1,5 +1,5 @@
 #include "BindTransceiverResponse.h"
-#include "../Global.h"
+#include "ParameterDefinition.h"
 
 #include <iostream>
 

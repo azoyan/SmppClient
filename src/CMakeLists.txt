@@ -16,8 +16,9 @@ pdu/BindTransceiverResponse.cpp
 pdu/BindTransceiverResponse.h
 logic/TcpClient.cpp
 logic/TcpClient.h
-Global.h
-Global.cpp
+pdu/ParameterDefinition.h
+pdu/ParameterDefinition.cpp
+
 )
 
 target_link_libraries(${PROJECT_NAME} pthread)

@@ -1,7 +1,7 @@
 #ifndef BINDTRANSCEIVERRESPONSE_H
 #define BINDTRANSCEIVERRESPONSE_H
 
-#include "../Global.h"
+#include "ParameterDefinition.h"
 #include <string>
 #include <vector>
 #include <byteswap.h>
