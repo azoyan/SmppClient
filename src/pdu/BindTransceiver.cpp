@@ -8,11 +8,11 @@
 nsSmppClient::BindTransceiver::BindTransceiver()
 : mCommandId(Command::ID::BindTransceiver)
 , mCommandStatus(0)
-, mSequenceNumber(1)
+, mSequenceNumber(0)
 , mInterfaceVersion(0x34)
 , mAddrTon(0)
 , mAddrNpi(0)
-, mAddressRange()
+, mAddressRange("")
 , mIsCorrect(false)
 {
 

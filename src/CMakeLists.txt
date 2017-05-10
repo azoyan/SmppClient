@@ -14,8 +14,6 @@ pdu/BindTransceiver.cpp
 pdu/BindTransceiver.h
 pdu/BindTransceiverResponse.cpp
 pdu/BindTransceiverResponse.h
-logic/MessageQueue.cpp
-logic/MessageQueue.h
 logic/TcpClient.cpp
 logic/TcpClient.h
 Global.h

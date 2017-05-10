@@ -49,7 +49,7 @@ void nsSmppClient::TcpClient::setSendBufferSize(size_t sendBufferSize) {
 
 void nsSmppClient::TcpClient::read() {
   char receiveBuffer[mReceiveBufferSize];
-  int numbytes = recv(mSocket, receiveBuffer, mReceiveBufferSize, MSG_NOSIGNAL );
+  int numbytes = recv(mSocket, receiveBuffer, mReceiveBufferSize, MSG_NOSIGNAL  );
   receiveBuffer[numbytes] = '\0';
 
   if (numbytes != -1) {
