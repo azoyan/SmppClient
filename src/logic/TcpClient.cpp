@@ -5,6 +5,7 @@
 #include <sys/fcntl.h>
 #include <iostream>
 #include <unistd.h>
+#include <cstring>
 
 nsSmppClient::TcpClient::TcpClient()
 : mSendBufferSize(0)
@@ -20,7 +21,8 @@ nsSmppClient::TcpClient::~TcpClient() {
 }
 
 bool nsSmppClient::TcpClient::connect(const std::string& ipAddress, const std::string& port) {
-  addrinfo hints    = {};
+  addrinfo hints;
+  std::memset(&hints, 0, sizeof(addrinfo));
   hints.ai_family   = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags    = AI_PASSIVE;
