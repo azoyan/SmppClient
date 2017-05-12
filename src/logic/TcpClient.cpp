@@ -30,6 +30,12 @@ bool nsSmppClient::TcpClient::connect(const std::string& ipAddress, const std::s
   addrinfo* res;
   int status = ::getaddrinfo(ipAddress.data(), port.data(), &hints, &res);
   mSocket    = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+  struct timeval timevalue;
+  std::memset(&timevalue, 0, sizeof(timeval));
+  timevalue.tv_sec = 10;
+
+  setsockopt(mSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timevalue,sizeof(struct timeval));
   bool ok    = mSocket != -1;
   status     = ::connect(mSocket, res->ai_addr, res->ai_addrlen);
   ok         = ok && (status != -1);
@@ -47,7 +53,7 @@ void nsSmppClient::TcpClient::setSendBufferSize(size_t sendBufferSize) {
 
 void nsSmppClient::TcpClient::read() {
   char receiveBuffer[mReceiveBufferSize];
-  int numbytes = ::recv(mSocket, receiveBuffer, mReceiveBufferSize, MSG_NOSIGNAL);
+  int numbytes = ::recv(mSocket, receiveBuffer, mReceiveBufferSize, MSG_NOSIGNAL );
   receiveBuffer[numbytes] = '\0';
 
   if (numbytes != -1) {
