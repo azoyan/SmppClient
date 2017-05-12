@@ -1,11 +1,50 @@
 #include <iostream>
 #include <thread>
-
-#include "logic//SmppClient.h"
-#include "logic//MessageQueue.h"
-#include <unistd.h>
 #include <mutex>
+#include <unistd.h>
+#include <condition_variable>
+#include <functional>
+#include <chrono>
+
 #include "pdu/BindTransceiver.h"
+#include "pdu/BindTransceiverResponse.h"
+#include "logic/TcpClient.h"
+
+nsSmppClient::BindTransceiver createBindTransceiver() {
+  std::string systemId, password, systemType;
+  int sequenceNumber;
+  std::cin >> systemId;
+  std::cin >> password;
+  std::cin >> systemType;
+  std::cin >> sequenceNumber;
+  nsSmppClient::BindTransceiver  pdu;
+  pdu.setSystemId(systemId);
+  pdu.setPassword(password);
+  pdu.setSystemType(systemType);
+  pdu.setSequenceNumber(sequenceNumber);
+  return pdu;
+}
+
+void print(const nsSmppClient::BindTransceiverResponse& pduBindTransceiverResponse) {
+  uint32_t commandLength    = pduBindTransceiverResponse.commandLength();
+  uint32_t commandId        = pduBindTransceiverResponse.commandId();
+  uint32_t commandStatus    = pduBindTransceiverResponse.commandStatus();
+  uint32_t sequenceNumber   = pduBindTransceiverResponse.sequenceNumber();
+
+  std::string systemId      = pduBindTransceiverResponse.systemId();
+
+  std::string commandIdName = commandIdToString(commandId);
+
+  std::string commandStatusName = errorCodeToString(commandStatus);
+
+  std::cout << std::endl
+            << "Command Length: "  << commandLength     << std::endl
+            << "commandIdName: "   << commandIdName     << std::endl
+            << "Command Status: "  << commandStatusName << std::endl
+            << "Sequence number: " << sequenceNumber    << std::endl
+            << "System ID: "       << systemId          << std::endl
+            << std::endl;
+}
 
 int main(int argv, char* argc []) {
   std::string ipAddress;
@@ -21,36 +60,92 @@ int main(int argv, char* argc []) {
     std::cin  >> port;
   }
 
-  nsSmppClient::SmppClient smppClient;
-  nsSmppClient::MessageQueue sendingMessageQueue(smppClient);
-  nsSmppClient::MessageQueue receivingMessageQueue(smppClient);
+  nsSmppClient::TcpClient tcpClient;
+  tcpClient.setReceiveBufferSize(nsSmppClient::BindTransceiverResponse::MaxBindTransceiverRespSize);
+  tcpClient.setSendBufferSize(nsSmppClient::BindTransceiver::MaxBindTransceiverSize);
 
-  bool isConnected = smppClient.connect(ipAddress, port);
+  bool isConnected = tcpClient.connect(ipAddress, port);
   if (isConnected) std::cout << "Connected" << std::endl;
-  else             std::cerr << "Connection error!" << std::endl;
-
-  nsSmppClient::BindTransceiver bt;
-  bt.setParameteres("Test", "Test", "WWW", 34, "a");
-
-  std::thread receivingThread(&nsSmppClient::MessageQueue::receiving, &receivingMessageQueue);
-  std::thread sendingThread(&nsSmppClient::MessageQueue::sending, &sendingMessageQueue);
-
-  std::thread inputThread([&sendingMessageQueue] {
-    while(true) {
-      std::string message;
-      std::cin >> message;
-      sendingMessageQueue.push(message);
-    }
-  } );
-
-  while (true) {
-    if (!receivingMessageQueue.isEmpty()) {
-      std::cout << receivingMessageQueue.take();
-    }
+  else {
+    std::cerr << "Connection error!" << std::endl;
+    return 0;
   }
 
-  sendingThread.join();
+  std::cout << "BIND_TRANSCEIVER format: [system ID] [password] [system type] [sequence number]\n\n";
+
+  bool needWork = true;
+
+  std::queue<std::vector<char>> sendingQueue;
+  std::condition_variable sendCondition;
+
+  std::thread sendingThread([&tcpClient, &sendingQueue, &sendCondition, &needWork] {
+    std::mutex mutex;
+    while(needWork) {
+      std::unique_lock<std::mutex> lock(mutex);
+      sendCondition.wait(lock, [&sendingQueue, &needWork] {
+        return !sendingQueue.empty() || !needWork;
+      });
+      std::cout << "in sending  " << std::this_thread::get_id() << std::endl;
+      while (!sendingQueue.empty()) {
+        auto message = sendingQueue.front();
+        sendingQueue.pop();
+        tcpClient.sendMessage(message);
+      }
+
+      std::cout << "sending end\n";
+      mutex.unlock();
+    }
+    std::cout << "Sending thread end" << std::endl;
+  });
+
+  std::queue<std::vector<char>> receivingQueue;
+  std::condition_variable receiveCondition;
+
+  std::thread receivingThread( [&tcpClient, &receivingQueue, &receiveCondition, &needWork] {
+    std::mutex mutex;
+    while (needWork) {
+      std::unique_lock<std::mutex> lock(mutex);
+      tcpClient.read();
+      std::cout << "in read  " << std::this_thread::get_id() << std::endl;
+
+      while(tcpClient.hasResponses()) {
+        auto msg = tcpClient.takeMessage();
+        receivingQueue.push(msg);
+      }
+
+      receiveCondition.wait(lock, [&receivingQueue, &needWork] {
+        return !receivingQueue.empty() || !needWork;
+      });
+      mutex.unlock();
+      std::cout << "read done\n";
+    }
+    std::cout << "Receiving thread end" << std::endl;
+  });
+
+  while (needWork) {
+    using namespace std::chrono_literals;
+    while (!receivingQueue.empty()) {
+      nsSmppClient::BindTransceiverResponse pduBindTransceiverResponse;
+      pduBindTransceiverResponse.setData(receivingQueue.front());
+      receivingQueue.pop();
+      print(pduBindTransceiverResponse);
+      bool ok = pduBindTransceiverResponse.commandStatus() == CommandStatus::ESME_ROK;
+      if (ok) {
+        std::cout << "Connection was successful" << std::endl;
+        needWork = false;
+      }
+    }
+    if (needWork && sendingQueue.empty()) {
+      auto pdu = createBindTransceiver().byteArray();
+      sendingQueue.push(pdu);
+    }
+    std::this_thread::sleep_for(1s);
+    receiveCondition.notify_all();
+    sendCondition.notify_all();
+  }
+
   receivingThread.join();
-  inputThread.join();
+  sendingThread.join();
+  std::cout << "Exit" << std::endl;
   return 0;
 }

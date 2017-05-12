@@ -1,93 +1,107 @@
 #include "BindTransceiver.h"
-#include <algorithm>
 #include <sstream>
 
 #include <cstring>
 #include <iostream>
-#include "../Global.h"
-
+#include "ParameterDefinition.h"
 
 nsSmppClient::BindTransceiver::BindTransceiver()
-: mCommandLength(0)
-, mCommandId(CommandId::BindTransceiver)
-, mCommandStatus(1)
-, mSequenceNumber(1)
-, mInterfaceVersion(0)
+: mCommandId(CommandId::BindTransceiver)
+, mCommandStatus(0)
+, mSequenceNumber(0)
+, mInterfaceVersion(0x34)
 , mAddrTon(0)
 , mAddrNpi(0)
+, mAddressRange("")
 , mIsCorrect(false)
 {
 
 }
 
-void nsSmppClient::BindTransceiver::setParameteres(const std::string& systemId,
-                                                   const std::string& password,
-                                                   const std::string& systemType,
-                                                   int8_t interfaceVersion,
-                                                   const std::string& addressRange) {
+void nsSmppClient::BindTransceiver::setSequenceNumber(uint32_t sequenceNumber) {
+  mSequenceNumber = sequenceNumber;
+}
 
-  mIsCorrect = systemId.size() <= SystemIdMaxLength;
-  mIsCorrect = mIsCorrect && password.size()     <= PasswordMaxLength;
-  mIsCorrect = mIsCorrect && systemType.size()   <= SystemTypeMaxLength;
-  mIsCorrect = mIsCorrect && addressRange.size() <= AddressRangeMaxLength;
+void nsSmppClient::BindTransceiver::setSystemId(const std::string& systemId) {  
+  mSystemID = systemId;
+}
 
-  if (mIsCorrect) {
-    mCommandLength = sizeof(mCommandLength)
-                   + sizeof(mCommandId)
-                   + sizeof(mCommandStatus)
-                   + sizeof(mSequenceNumber)
-                   + systemId.size()
-                   + password.size()
-                   + systemType.size()
-                   + sizeof(mInterfaceVersion)
-                   + sizeof(mAddrTon)
-                   + sizeof(mAddrNpi)
-                   + addressRange.size();
+void nsSmppClient::BindTransceiver::setPassword(const std::string& password) {
+  mPassword = password;
+}
 
-    mSystemID         = systemId;
-    mPassowrd         = password;
-    mSystemType       = systemType;
-    mInterfaceVersion = interfaceVersion;
-    mAddressRange     = addressRange;
-  }
+void nsSmppClient::BindTransceiver::setSystemType(const std::string& systemType) {  
+  mSystemType = systemType;
+}
+
+void nsSmppClient::BindTransceiver::setInterfaceVersion(uint8_t interfaceVersion) {
+  mInterfaceVersion = interfaceVersion;
+}
+
+void nsSmppClient::BindTransceiver::setAddrTon(int8_t addrTon) {
+  mAddrTon = addrTon;
+}
+
+void nsSmppClient::BindTransceiver::setAddrNpi(int8_t addrNpi){
+  mAddrNpi = addrNpi;
+}
+
+void nsSmppClient::BindTransceiver::setAddresRange(const std::__cxx11::string& addressRange) {  
+  mAddressRange = addressRange;
 }
 
 bool nsSmppClient::BindTransceiver::isCorrect() const {
-  return mIsCorrect;
+  bool ok  = mSystemID.size()     <= SystemIdMaxLength;
+  ok = ok && mPassword.size()     <= PasswordMaxLength;
+  ok = ok && mSystemType.size()   <= SystemTypeMaxLength;
+  ok = ok && mAddressRange.size() <= AddressRangeMaxLength;
+  return ok;
 }
 
-std::vector<char> nsSmppClient::BindTransceiver::byteArray() {
-  char commandLength   [sizeof(mCommandLength)];
-  char commandId       [sizeof(mCommandId)];
-  char commandStatus   [sizeof(mCommandStatus)];
-  char sequenceNumber  [sizeof(mSequenceNumber)];
-  char interfaceVersion[sizeof(mInterfaceVersion)];
-  char addrTon         [sizeof(mAddrTon)];
-  char addrNpi         [sizeof(mAddrNpi)];
-
-  memcpy(&commandLength,    &mCommandLength,    sizeof(commandLength));
-  memcpy(&commandId,        &mCommandId,        sizeof(commandId));
-  memcpy(&commandStatus,    &mCommandStatus,    sizeof(commandStatus));
-  memcpy(&sequenceNumber,   &mSequenceNumber,   sizeof(sequenceNumber));
-  memcpy(&interfaceVersion, &mInterfaceVersion, sizeof(interfaceVersion));
-  memcpy(&addrTon,          &mAddrTon,          sizeof(addrTon));
-  memcpy(&addrNpi,          &mAddrNpi,          sizeof(addrNpi));
-
-  char   bytes [mCommandLength];
-  strcat(bytes, commandLength);
-  strcat(bytes, commandId);
-  strcat(bytes, commandStatus);
-  strcat(bytes, sequenceNumber);
-  strcat(bytes, mSystemID.c_str());
-  strcat(bytes, mPassowrd.c_str());
-  strcat(bytes, mSystemType.c_str());
-  strcat(bytes, interfaceVersion);
-  strcat(bytes, addrTon);
-  strcat(bytes, addrNpi);
-  strcat(bytes, mAddressRange.c_str());
+std::vector<char> nsSmppClient::BindTransceiver::byteArray() const {
+  uint32_t length = DefaultLength
+                   + mSystemID.size() + 1
+                   + mPassword.size() + 1
+                   + mSystemType.size() + 1
+                   + mAddressRange.size() + 1;
 
   std::vector<char> result;
-  result.assign(bytes, bytes + sizeof(bytes));
+  result.reserve(length);
 
+  std::vector<char> commandLength  = intToBytes(length);
+  std::vector<char> commandId      = intToBytes(mCommandId);
+  std::vector<char> commandStatus  = intToBytes(mCommandStatus);
+  std::vector<char> sequenceNumber = intToBytes(mSequenceNumber);
+
+  result.insert(result.end(), commandLength.begin(),  commandLength.end());
+  result.insert(result.end(), commandId.begin(),      commandId.end());
+  result.insert(result.end(), commandStatus.begin(),  commandStatus.end());
+  result.insert(result.end(), sequenceNumber.begin(), sequenceNumber.end());
+
+  result.insert(result.end(), mSystemID.begin(),   mSystemID.end());
+  result.push_back('\0');
+  result.insert(result.end(), mPassword.begin(),   mPassword.end());
+  result.push_back('\0');
+  result.insert(result.end(), mSystemType.begin(), mSystemType.end());
+  result.push_back('\0');
+
+  result.push_back(mInterfaceVersion);
+  std::cout << "Interface Version: " << static_cast<int>(mInterfaceVersion) << std::endl;
+
+  result.push_back(mAddrTon);
+  result.push_back(mAddrNpi);
+
+  result.insert(result.end(), mAddressRange.begin(), mAddressRange.end());
+  result.push_back('\0');
   return result;
 }
+
+std::vector<char> nsSmppClient::BindTransceiver::intToBytes(uint32_t number) {
+  std::vector<char> result(sizeof(number));
+  for (int i = 0; i < sizeof(number); i++) {
+    result.at(3 - i) = number >> (i * 8) & 0xFF;
+  }
+  return result;
+}
+
+

@@ -9,40 +9,49 @@
 
 namespace nsSmppClient {
   class BindTransceiver {
-  public:
-    BindTransceiver();
-
     enum { SystemIdMaxLength     = 16,
            PasswordMaxLength     = 9,
            SystemTypeMaxLength   = 13,
            AddressRangeMaxLength = 41 };
+  public:
+    BindTransceiver();
 
-    void setParameteres(const std::string& systemId,
-                        const std::string& password,
-                        const std::string& systemType,
-                        int8_t interfaceVersion, const std::__cxx11::string& addressRange);
+    enum { MaxBindTransceiverSize = 98 };
 
+
+    void setSequenceNumber(uint32_t sequenceNumber);
+    void setSystemId(const std::string& systemId);
+    void setPassword(const std::string& password);
+    void setSystemType(const std::string& systemType);
+    void setInterfaceVersion(uint8_t interfaceVersion);
+    void setAddrTon(int8_t addrTon);
+    void setAddrNpi(int8_t addrNpi);
+    void setAddresRange(const std::string& addressRange);
+
+  public:
     bool isCorrect() const;
-
-    std::vector<char> byteArray();
+    std::vector<char> byteArray() const;
 
   private:
     //header
-    int32_t mCommandLength;
-    int32_t mCommandId;
-    int32_t mCommandStatus;
-    int32_t mSequenceNumber;
+    uint32_t mCommandLength;
+    uint32_t mCommandId;
+    uint32_t mCommandStatus;
+    uint32_t mSequenceNumber;
 
     //body
     std::string mSystemID;
-    std::string mPassowrd;
+    std::string mPassword;
     std::string mSystemType;
-    char mInterfaceVersion;
-    char mAddrTon;
-    char mAddrNpi;
+    uint8_t mInterfaceVersion;
+    uint8_t mAddrTon;
+    uint8_t mAddrNpi;
     std::string mAddressRange;
 
+    static std::vector<char> intToBytes(uint32_t number);
+
   private:
+    enum { DefaultLength = 19 };
     bool mIsCorrect;
   };
 }

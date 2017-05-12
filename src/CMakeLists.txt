@@ -14,11 +14,11 @@ pdu/BindTransceiver.cpp
 pdu/BindTransceiver.h
 pdu/BindTransceiverResponse.cpp
 pdu/BindTransceiverResponse.h
-logic/MessageQueue.cpp
-logic/MessageQueue.h
-logic/SmppClient.cpp
-logic/SmppClient.h
-Global.h
+logic/TcpClient.cpp
+logic/TcpClient.h
+pdu/ParameterDefinition.h
+pdu/ParameterDefinition.cpp
+
 )
 
 target_link_libraries(${PROJECT_NAME} pthread)
